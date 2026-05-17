@@ -35,6 +35,7 @@ import { reserveShiftTabForPermissions } from "./extensions/permissions/keybindi
 import promptEnrichmentExtension from "./extensions/prompt-construction/prompt-enrichment.js"
 import promptSummaryExtension from "./extensions/prompt-summary.js"
 import questionnaireExtension from "./extensions/questionnaire.js"
+import sessionNameExtension from "./extensions/session-name.js"
 import shutdownMarkerExtension from "./extensions/shutdown-marker.js"
 import startupUpdateExtension from "./extensions/startup-update.js"
 import statsExtension from "./extensions/stats/index.js"
@@ -313,6 +314,7 @@ try {
 
 		const extensionFactories = [
 			startupUpdateExtension,
+			sessionNameExtension(),
 			sessionIdCaptureExtension,
 			shutdownMarkerExtension,
 			statsExtension,
