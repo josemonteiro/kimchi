@@ -564,9 +564,9 @@ describe("readExistingProviders strips kimchi-experimental", () => {
 			modelsJsonPath,
 			JSON.stringify({
 				providers: {
-					experimental: {
+					"kimchi-experimental": {
 						baseUrl: "https://llm.kimchi.dev/experimental/openai/v1",
-						apiKey: "KIMCHI_API_KEY",
+						apiKey: "some-key",
 						api: "openai-completions",
 						authHeader: true,
 						headers: {},
@@ -584,7 +584,7 @@ describe("readExistingProviders strips kimchi-experimental", () => {
 		await updateModelsConfig(modelsJsonPath, "test-key")
 
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
-		expect(config.providers.experimental).toBeUndefined()
+		expect(config.providers["kimchi-experimental"]).toBeUndefined()
 	})
 })
 
@@ -607,10 +607,10 @@ describe("injectExperimentalProvider", () => {
 		writeFileSync(modelsJsonPath, JSON.stringify({ providers: {} }))
 		injectExperimentalProvider(modelsJsonPath, "test-api-key")
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
-		expect(config.providers.experimental).toBeUndefined()
+		expect(config.providers["kimchi-experimental"]).toBeUndefined()
 	})
 
-	it("copies the kimchi-dev block with experimental baseUrl", async () => {
+	it("copies the kimchi-dev block with kimchi-experimental baseUrl", async () => {
 		vi.mocked(fetch).mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({ models: [KIMI] }),
@@ -621,7 +621,7 @@ describe("injectExperimentalProvider", () => {
 
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
 		const dev = config.providers["kimchi-dev"]
-		const exp = config.providers.experimental
+		const exp = config.providers["kimchi-experimental"]
 
 		expect(exp).toBeDefined()
 		expect(exp.baseUrl).toBe("https://llm.kimchi.dev/experimental/openai/v1")
@@ -653,7 +653,7 @@ describe("injectExperimentalProvider", () => {
 
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
 		expect(config.providers["my-custom"]).toBeDefined()
-		expect(config.providers.experimental).toBeDefined()
+		expect(config.providers["kimchi-experimental"]).toBeDefined()
 	})
 
 	it("is a no-op when models.json does not exist", () => {

@@ -221,7 +221,7 @@ function readExistingProviders(modelsJsonPath: string): Record<string, unknown> 
 		const raw = readFileSync(modelsJsonPath, "utf-8")
 		const config = JSON.parse(raw)
 		const providers = config?.providers ?? {}
-		const { "kimchi-dev": _kimchi, experimental: _exp, ...rest } = providers as Record<string, unknown>
+		const { "kimchi-dev": _kimchi, "kimchi-experimental": _exp, ...rest } = providers as Record<string, unknown>
 		return rest
 	} catch {
 		return {}
@@ -266,7 +266,7 @@ export function injectExperimentalProvider(modelsJsonPath: string, apiKey: strin
 		baseUrl: "https://llm.kimchi.dev/experimental/openai/v1",
 		apiKey,
 	}
-	config.providers = { ...config.providers, experimental: experimental }
+	config.providers = { ...config.providers, "kimchi-experimental": experimental }
 	writeFileSync(modelsJsonPath, JSON.stringify(config, null, "\t"), "utf-8")
 }
 
@@ -274,7 +274,7 @@ export function readExperimentalModels(modelsJsonPath: string): ModelMetadata[] 
 	try {
 		const raw = readFileSync(modelsJsonPath, "utf-8")
 		const parsed = JSON.parse(raw)
-		const models = parsed?.providers?.experimental?.models
+		const models = parsed?.providers?.["kimchi-experimental"]?.models
 		if (!Array.isArray(models) || models.length === 0) return []
 		return (models as PiModelConfig[]).map(modelToMetadata)
 	} catch {
