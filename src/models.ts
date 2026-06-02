@@ -269,6 +269,18 @@ export function injectExperimentalProvider(modelsJsonPath: string): void {
 	writeFileSync(modelsJsonPath, JSON.stringify(config, null, "\t"), "utf-8")
 }
 
+export function readExperimentalModels(modelsJsonPath: string): ModelMetadata[] {
+	try {
+		const raw = readFileSync(modelsJsonPath, "utf-8")
+		const parsed = JSON.parse(raw)
+		const models = parsed?.providers?.["kimchi-experimental"]?.models
+		if (!Array.isArray(models) || models.length === 0) return []
+		return (models as PiModelConfig[]).map(modelToMetadata)
+	} catch {
+		return []
+	}
+}
+
 /**
  * Fetch available models from the kimchi metadata API and write the
  * configuration to modelsJsonPath. If no API key is configured, returns

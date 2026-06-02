@@ -2,7 +2,13 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { ModelsFetchError, injectExperimentalProvider, isTransientModelsError, updateModelsConfig } from "./models.js"
+import {
+	ModelsFetchError,
+	injectExperimentalProvider,
+	isTransientModelsError,
+	readExperimentalModels,
+	updateModelsConfig,
+} from "./models.js"
 
 const KIMI: unknown = {
 	slug: "kimi-k2.5",
@@ -654,5 +660,43 @@ describe("injectExperimentalProvider", () => {
 	it("is a no-op when models.json does not exist", () => {
 		injectExperimentalProvider(modelsJsonPath)
 		expect(existsSync(modelsJsonPath)).toBe(false)
+	})
+})
+
+describe("readExperimentalModels", () => {
+	let tempDir: string
+	let modelsJsonPath: string
+
+	beforeEach(() => {
+		tempDir = mkdtempSync(join(tmpdir(), "kimchi-read-exp-test-"))
+		modelsJsonPath = join(tempDir, "models.json")
+		vi.stubGlobal("fetch", vi.fn())
+	})
+
+	afterEach(() => {
+		rmSync(tempDir, { recursive: true, force: true })
+		vi.restoreAllMocks()
+	})
+
+	it("returns empty array when models.json does not exist", () => {
+		expect(readExperimentalModels(modelsJsonPath)).toEqual([])
+	})
+
+	it("returns empty array when kimchi-experimental is absent", () => {
+		writeFileSync(modelsJsonPath, JSON.stringify({ providers: { "kimchi-dev": { models: [] } } }))
+		expect(readExperimentalModels(modelsJsonPath)).toEqual([])
+	})
+
+	it("returns ModelMetadata for each model in kimchi-experimental", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({ models: [KIMI] }),
+		} as Response)
+		await updateModelsConfig(modelsJsonPath, "test-key")
+		injectExperimentalProvider(modelsJsonPath)
+
+		const result = readExperimentalModels(modelsJsonPath)
+		expect(result).toHaveLength(1)
+		expect(result[0].slug).toBe("kimi-k2.5")
 	})
 })
