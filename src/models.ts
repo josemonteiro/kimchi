@@ -251,7 +251,7 @@ export function syncProviderModels(
 	writeFileSync(modelsJsonPath, JSON.stringify(config, null, "\t"), "utf-8")
 }
 
-export function injectExperimentalProvider(modelsJsonPath: string): void {
+export function injectExperimentalProvider(modelsJsonPath: string, apiKey: string): void {
 	if (!existsSync(modelsJsonPath)) return
 	let config: { providers?: Record<string, unknown> }
 	try {
@@ -264,23 +264,10 @@ export function injectExperimentalProvider(modelsJsonPath: string): void {
 	const experimental = {
 		...(kimchiDev as Record<string, unknown>),
 		baseUrl: "https://llm.kimchi.dev/experimental/openai/v1",
+		apiKey,
 	}
 	config.providers = { ...config.providers, experimental: experimental }
 	writeFileSync(modelsJsonPath, JSON.stringify(config, null, "\t"), "utf-8")
-}
-
-export function injectExperimentalAuth(authJsonPath: string): void {
-	if (!existsSync(authJsonPath)) return
-	let auth: Record<string, unknown>
-	try {
-		auth = JSON.parse(readFileSync(authJsonPath, "utf-8"))
-	} catch {
-		return
-	}
-	const kimchiDev = auth["kimchi-dev"]
-	if (!kimchiDev) return
-	auth.experimental = kimchiDev
-	writeFileSync(authJsonPath, JSON.stringify(auth, null, 2), "utf-8")
 }
 
 export function readExperimentalModels(modelsJsonPath: string): ModelMetadata[] {

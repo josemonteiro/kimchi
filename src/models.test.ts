@@ -4,7 +4,6 @@ import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
 	ModelsFetchError,
-	injectExperimentalAuth,
 	injectExperimentalProvider,
 	isTransientModelsError,
 	readExperimentalModels,
@@ -606,7 +605,7 @@ describe("injectExperimentalProvider", () => {
 
 	it("is a no-op when kimchi-dev is absent", () => {
 		writeFileSync(modelsJsonPath, JSON.stringify({ providers: {} }))
-		injectExperimentalProvider(modelsJsonPath)
+		injectExperimentalProvider(modelsJsonPath, "test-api-key")
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
 		expect(config.providers.experimental).toBeUndefined()
 	})
@@ -618,7 +617,7 @@ describe("injectExperimentalProvider", () => {
 		} as Response)
 		await updateModelsConfig(modelsJsonPath, "test-key")
 
-		injectExperimentalProvider(modelsJsonPath)
+		injectExperimentalProvider(modelsJsonPath, "test-api-key")
 
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
 		const dev = config.providers["kimchi-dev"]
@@ -626,8 +625,7 @@ describe("injectExperimentalProvider", () => {
 
 		expect(exp).toBeDefined()
 		expect(exp.baseUrl).toBe("https://llm.kimchi.dev/experimental/openai/v1")
-		// Everything else is identical to kimchi-dev
-		expect(exp.apiKey).toBe(dev.apiKey)
+		expect(exp.apiKey).toBe("test-api-key")
 		expect(exp.api).toBe(dev.api)
 		expect(exp.authHeader).toBe(dev.authHeader)
 		expect(exp.models).toEqual(dev.models)
@@ -651,7 +649,7 @@ describe("injectExperimentalProvider", () => {
 			}),
 		)
 
-		injectExperimentalProvider(modelsJsonPath)
+		injectExperimentalProvider(modelsJsonPath, "test-api-key")
 
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
 		expect(config.providers["my-custom"]).toBeDefined()
@@ -659,7 +657,7 @@ describe("injectExperimentalProvider", () => {
 	})
 
 	it("is a no-op when models.json does not exist", () => {
-		injectExperimentalProvider(modelsJsonPath)
+		injectExperimentalProvider(modelsJsonPath, "test-api-key")
 		expect(existsSync(modelsJsonPath)).toBe(false)
 	})
 })
@@ -694,57 +692,10 @@ describe("readExperimentalModels", () => {
 			json: async () => ({ models: [KIMI] }),
 		} as Response)
 		await updateModelsConfig(modelsJsonPath, "test-key")
-		injectExperimentalProvider(modelsJsonPath)
+		injectExperimentalProvider(modelsJsonPath, "test-api-key")
 
 		const result = readExperimentalModels(modelsJsonPath)
 		expect(result).toHaveLength(1)
 		expect(result[0].slug).toBe("kimi-k2.5")
-	})
-})
-
-describe("injectExperimentalAuth", () => {
-	let tmpDir: string
-	let authJsonPath: string
-
-	beforeEach(() => {
-		tmpDir = mkdtempSync(join(tmpdir(), "kimchi-auth-test-"))
-		authJsonPath = join(tmpDir, "auth.json")
-	})
-
-	afterEach(() => {
-		rmSync(tmpDir, { recursive: true, force: true })
-	})
-
-	it("does nothing when auth.json does not exist", () => {
-		injectExperimentalAuth(authJsonPath)
-		expect(existsSync(authJsonPath)).toBe(false)
-	})
-
-	it("does nothing when kimchi-dev entry is absent", () => {
-		writeFileSync(authJsonPath, JSON.stringify({ "other-provider": { type: "oauth" } }), "utf-8")
-		injectExperimentalAuth(authJsonPath)
-		const result = JSON.parse(readFileSync(authJsonPath, "utf-8"))
-		expect(result).not.toHaveProperty("experimental")
-	})
-
-	it("copies kimchi-dev entry as experimental", () => {
-		const kimchiAuth = { type: "oauth", access: "token123", refresh: "", expires: 9999 }
-		writeFileSync(authJsonPath, JSON.stringify({ "kimchi-dev": kimchiAuth }), "utf-8")
-		injectExperimentalAuth(authJsonPath)
-		const result = JSON.parse(readFileSync(authJsonPath, "utf-8"))
-		expect(result.experimental).toEqual(kimchiAuth)
-		expect(result["kimchi-dev"]).toEqual(kimchiAuth)
-	})
-
-	it("overwrites an existing experimental entry", () => {
-		const kimchiAuth = { type: "oauth", access: "newtoken", refresh: "", expires: 9999 }
-		writeFileSync(
-			authJsonPath,
-			JSON.stringify({ "kimchi-dev": kimchiAuth, experimental: { type: "oauth", access: "oldtoken" } }),
-			"utf-8",
-		)
-		injectExperimentalAuth(authJsonPath)
-		const result = JSON.parse(readFileSync(authJsonPath, "utf-8"))
-		expect(result.experimental.access).toBe("newtoken")
 	})
 })
