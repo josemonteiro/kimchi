@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
 	ModelsFetchError,
+	injectExperimentalAuth,
 	injectExperimentalProvider,
 	isTransientModelsError,
 	readExperimentalModels,
@@ -698,5 +699,52 @@ describe("readExperimentalModels", () => {
 		const result = readExperimentalModels(modelsJsonPath)
 		expect(result).toHaveLength(1)
 		expect(result[0].slug).toBe("kimi-k2.5")
+	})
+})
+
+describe("injectExperimentalAuth", () => {
+	let tmpDir: string
+	let authJsonPath: string
+
+	beforeEach(() => {
+		tmpDir = mkdtempSync(join(tmpdir(), "kimchi-auth-test-"))
+		authJsonPath = join(tmpDir, "auth.json")
+	})
+
+	afterEach(() => {
+		rmSync(tmpDir, { recursive: true, force: true })
+	})
+
+	it("does nothing when auth.json does not exist", () => {
+		injectExperimentalAuth(authJsonPath)
+		expect(existsSync(authJsonPath)).toBe(false)
+	})
+
+	it("does nothing when kimchi-dev entry is absent", () => {
+		writeFileSync(authJsonPath, JSON.stringify({ "other-provider": { type: "oauth" } }), "utf-8")
+		injectExperimentalAuth(authJsonPath)
+		const result = JSON.parse(readFileSync(authJsonPath, "utf-8"))
+		expect(result).not.toHaveProperty("experimental")
+	})
+
+	it("copies kimchi-dev entry as experimental", () => {
+		const kimchiAuth = { type: "oauth", access: "token123", refresh: "", expires: 9999 }
+		writeFileSync(authJsonPath, JSON.stringify({ "kimchi-dev": kimchiAuth }), "utf-8")
+		injectExperimentalAuth(authJsonPath)
+		const result = JSON.parse(readFileSync(authJsonPath, "utf-8"))
+		expect(result.experimental).toEqual(kimchiAuth)
+		expect(result["kimchi-dev"]).toEqual(kimchiAuth)
+	})
+
+	it("overwrites an existing experimental entry", () => {
+		const kimchiAuth = { type: "oauth", access: "newtoken", refresh: "", expires: 9999 }
+		writeFileSync(
+			authJsonPath,
+			JSON.stringify({ "kimchi-dev": kimchiAuth, experimental: { type: "oauth", access: "oldtoken" } }),
+			"utf-8",
+		)
+		injectExperimentalAuth(authJsonPath)
+		const result = JSON.parse(readFileSync(authJsonPath, "utf-8"))
+		expect(result.experimental.access).toBe("newtoken")
 	})
 })

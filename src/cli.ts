@@ -70,6 +70,7 @@ import uiExtension from "./extensions/ui.js"
 import webFetchExtension from "./extensions/web-fetch/index.js"
 import webSearchExtension from "./extensions/web-search/index.js"
 import {
+	injectExperimentalAuth,
 	injectExperimentalProvider,
 	isTransientModelsError,
 	readExperimentalModels,
@@ -328,6 +329,7 @@ try {
 			;({ models } = await updateModelsConfig(modelsJsonPath, currentApiKey))
 			if (experimentalFeatures) {
 				injectExperimentalProvider(modelsJsonPath)
+				injectExperimentalAuth(resolve(agentDir, "auth.json"))
 				models = [...models, ...readExperimentalModels(modelsJsonPath)]
 			}
 		} catch (err) {
@@ -348,6 +350,7 @@ try {
 				;({ models } = await updateModelsConfig(modelsJsonPath, currentApiKey))
 				if (experimentalFeatures) {
 					injectExperimentalProvider(modelsJsonPath)
+					injectExperimentalAuth(resolve(agentDir, "auth.json"))
 					models = [...models, ...readExperimentalModels(modelsJsonPath)]
 				}
 			} else if (isTransientModelsError(err)) {

@@ -269,6 +269,20 @@ export function injectExperimentalProvider(modelsJsonPath: string): void {
 	writeFileSync(modelsJsonPath, JSON.stringify(config, null, "\t"), "utf-8")
 }
 
+export function injectExperimentalAuth(authJsonPath: string): void {
+	if (!existsSync(authJsonPath)) return
+	let auth: Record<string, unknown>
+	try {
+		auth = JSON.parse(readFileSync(authJsonPath, "utf-8"))
+	} catch {
+		return
+	}
+	const kimchiDev = auth["kimchi-dev"]
+	if (!kimchiDev) return
+	auth.experimental = kimchiDev
+	writeFileSync(authJsonPath, JSON.stringify(auth, null, 2), "utf-8")
+}
+
 export function readExperimentalModels(modelsJsonPath: string): ModelMetadata[] {
 	try {
 		const raw = readFileSync(modelsJsonPath, "utf-8")
