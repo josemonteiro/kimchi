@@ -564,7 +564,7 @@ describe("readExistingProviders strips kimchi-experimental", () => {
 			modelsJsonPath,
 			JSON.stringify({
 				providers: {
-					"kimchi-experimental": {
+					experimental: {
 						baseUrl: "https://llm.kimchi.dev/experimental/openai/v1",
 						apiKey: "KIMCHI_API_KEY",
 						api: "openai-completions",
@@ -584,7 +584,7 @@ describe("readExistingProviders strips kimchi-experimental", () => {
 		await updateModelsConfig(modelsJsonPath, "test-key")
 
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
-		expect(config.providers["kimchi-experimental"]).toBeUndefined()
+		expect(config.providers.experimental).toBeUndefined()
 	})
 })
 
@@ -607,7 +607,7 @@ describe("injectExperimentalProvider", () => {
 		writeFileSync(modelsJsonPath, JSON.stringify({ providers: {} }))
 		injectExperimentalProvider(modelsJsonPath)
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
-		expect(config.providers["kimchi-experimental"]).toBeUndefined()
+		expect(config.providers.experimental).toBeUndefined()
 	})
 
 	it("copies the kimchi-dev block with experimental baseUrl", async () => {
@@ -621,7 +621,7 @@ describe("injectExperimentalProvider", () => {
 
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
 		const dev = config.providers["kimchi-dev"]
-		const exp = config.providers["kimchi-experimental"]
+		const exp = config.providers.experimental
 
 		expect(exp).toBeDefined()
 		expect(exp.baseUrl).toBe("https://llm.kimchi.dev/experimental/openai/v1")
@@ -654,7 +654,7 @@ describe("injectExperimentalProvider", () => {
 
 		const config = JSON.parse(readFileSync(modelsJsonPath, "utf-8"))
 		expect(config.providers["my-custom"]).toBeDefined()
-		expect(config.providers["kimchi-experimental"]).toBeDefined()
+		expect(config.providers.experimental).toBeDefined()
 	})
 
 	it("is a no-op when models.json does not exist", () => {
